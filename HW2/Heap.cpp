@@ -17,18 +17,18 @@ CHeapManager::~CHeapManager() {
 }
 
 void CHeapManager::Create(int minSize, int maxSize) {
-	// Для начала округлим misSize и maxSize_ до 4 Кб
+	// Г„Г«Гї Г­Г Г·Г Г«Г  Г®ГЄГ°ГіГЈГ«ГЁГ¬ misSize ГЁ maxSize_ Г¤Г® 4 ГЉГЎ
 	minSize = (minSize + page_size - 1) / page_size * page_size;
 	maxSize = (maxSize + page_size - 1) / page_size * page_size;
-	//Зарезервируем непрерывный регион памяти размером maxSize
+	//Г‡Г Г°ГҐГ§ГҐГ°ГўГЁГ°ГіГҐГ¬ Г­ГҐГЇГ°ГҐГ°Г»ГўГ­Г»Г© Г°ГҐГЈГЁГ®Г­ ГЇГ Г¬ГїГІГЁ Г°Г Г§Г¬ГҐГ°Г®Г¬ maxSize
 	head_memmory = VirtualAlloc(NULL, maxSize, MEM_RESERVE, PAGE_READWRITE);
 	if( head_memmory != NULL) {
-		//Commit для части этого региона
+		//Commit Г¤Г«Гї Г·Г Г±ГІГЁ ГЅГІГ®ГЈГ® Г°ГҐГЈГЁГ®Г­Г 
 		void* commit_memmory = VirtualAlloc(head_memmory, minSize, MEM_COMMIT, PAGE_READWRITE);
 		if (commit_memmory != NULL) {
 			int number_pages = minSize / page_size;
 			pages.resize(number_pages, 1);
-			add_free_block(head_memmory, maxSize); // добавим в множество свободных блоков новый свободный блок
+			add_free_block(head_memmory, maxSize); // Г¤Г®ГЎГ ГўГЁГ¬ Гў Г¬Г­Г®Г¦ГҐГ±ГІГўГ® Г±ГўГ®ГЎГ®Г¤Г­Г»Гµ ГЎГ«Г®ГЄГ®Гў Г­Г®ГўГ»Г© Г±ГўГ®ГЎГ®Г¤Г­Г»Г© ГЎГ«Г®ГЄ
 		}
 		else {
 			std::cerr << "Error: cannot commit memory!" << std::endl;
@@ -39,14 +39,14 @@ void CHeapManager::Create(int minSize, int maxSize) {
 		std::cerr << "Error: cannot allocate memory!" << std::endl;
 		return;
 	}
-}// Дает номера страниц (с какой по какую мы знимаем)
+}// Г„Г ГҐГІ Г­Г®Г¬ГҐГ°Г  Г±ГІГ°Г Г­ГЁГ¶ (Г± ГЄГ ГЄГ®Г© ГЇГ® ГЄГ ГЄГіГѕ Г¬Г» Г§Г­ГЁГ¬Г ГҐГ¬)
 void CHeapManager::interval_pages(void* block, int size, int& begin_page, int& end_page) {
 	int byte_start = static_cast<byte*>(block) - static_cast<byte*>(head_memmory);
 	begin_page = byte_start / page_size;
 	end_page = (byte_start + sizeof(int) + size - 1) / page_size;
 }
 
-// Добавляет свободный кусок памяти в одно из хранилищ
+// Г„Г®ГЎГ ГўГ«ГїГҐГІ Г±ГўГ®ГЎГ®Г¤Г­Г»Г© ГЄГіГ±Г®ГЄ ГЇГ Г¬ГїГІГЁ Гў Г®Г¤Г­Г® ГЁГ§ ГµГ°Г Г­ГЁГ«ГЁГ№
 void CHeapManager::add_free_block(void* start, int size) { 
 	if (size < page_size) {
 		int begin_page, end_page;
@@ -54,7 +54,7 @@ void CHeapManager::add_free_block(void* start, int size) {
 		if (pages[begin_page] == 0) {  
 			exit(0);
 		}
-		memcpy(start, &size, sizeof(int));  // Храним размер блока в самом блоке
+		memcpy(start, &size, sizeof(int));  // Г•Г°Г Г­ГЁГ¬ Г°Г Г§Г¬ГҐГ° ГЎГ«Г®ГЄГ  Гў Г±Г Г¬Г®Г¬ ГЎГ«Г®ГЄГҐ
 		free_small_blocks.insert(start);
 	}
 	else if (size < medium_block_size) {
@@ -67,10 +67,10 @@ void CHeapManager::add_free_block(void* start, int size) {
 
 void* CHeapManager::Alloc(int size) {
 	int block = sizeof(int);
-	size = (size + block - 1) / block * block;  // Округляем до 4 байт
-	void* begin_memmory = NULL;  // адрес доступного блока
-	int memorry_size = 0;  // размер доступного блока
-	// ищем доступный блок
+	size = (size + block - 1) / block * block;  // ГЋГЄГ°ГіГЈГ«ГїГҐГ¬ Г¤Г® 4 ГЎГ Г©ГІ
+	void* begin_memmory = NULL;  // Г Г¤Г°ГҐГ± Г¤Г®Г±ГІГіГЇГ­Г®ГЈГ® ГЎГ«Г®ГЄГ 
+	int memorry_size = 0;  // Г°Г Г§Г¬ГҐГ° Г¤Г®Г±ГІГіГЇГ­Г®ГЈГ® ГЎГ«Г®ГЄГ 
+	// ГЁГ№ГҐГ¬ Г¤Г®Г±ГІГіГЇГ­Г»Г© ГЎГ«Г®ГЄ
 	if (size + sizeof(int) < page_size) {
 		std::make_pair(std::ref(begin_memmory), std::ref(memorry_size)) = find_free_block(free_small_blocks, size); 
 	}
@@ -85,12 +85,12 @@ void* CHeapManager::Alloc(int size) {
 		return 0;
 	}
 	else {
-		return allocate_memory(begin_memmory, memorry_size, size);  // Отщипляем память из свободного блока
+		return allocate_memory(begin_memmory, memorry_size, size);  // ГЋГІГ№ГЁГЇГ«ГїГҐГ¬ ГЇГ Г¬ГїГІГј ГЁГ§ Г±ГўГ®ГЎГ®Г¤Г­Г®ГЈГ® ГЎГ«Г®ГЄГ 
 	}
 }
 
 void CHeapManager::Free(void *mem) {
-	mem = static_cast<byte*>(mem) - sizeof(int);  // Адрес блока, который хранится в blocks 
+	mem = static_cast<byte*>(mem) - sizeof(int);  // ГЂГ¤Г°ГҐГ± ГЎГ«Г®ГЄГ , ГЄГ®ГІГ®Г°Г»Г© ГµГ°Г Г­ГЁГІГ±Гї Гў blocks 
 	int memSize;
 	memcpy(&memSize, mem, sizeof(int));
 	int beginPage, endPage;
@@ -106,13 +106,13 @@ void CHeapManager::Free(void *mem) {
 			endFreeInterval = page;
 		}
 	}
-	// добавим в множество свободных блоков новый свободный блок
-	// и при возможности объединим его с соседними
+	// Г¤Г®ГЎГ ГўГЁГ¬ Гў Г¬Г­Г®Г¦ГҐГ±ГІГўГ® Г±ГўГ®ГЎГ®Г¤Г­Г»Гµ ГЎГ«Г®ГЄГ®Гў Г­Г®ГўГ»Г© Г±ГўГ®ГЎГ®Г¤Г­Г»Г© ГЎГ«Г®ГЄ
+	// ГЁ ГЇГ°ГЁ ГўГ®Г§Г¬Г®Г¦Г­Г®Г±ГІГЁ Г®ГЎГєГҐГ¤ГЁГ­ГЁГ¬ ГҐГЈГ® Г± Г±Г®Г±ГҐГ¤Г­ГЁГ¬ГЁ
 	add_empty_block_with_merge(mem, memSize + sizeof(int));
 	blocks.erase(mem);
 	if (beginFreeInterval >= beginPage) {
 		VirtualFree(static_cast<byte*>(head_memmory) + beginFreeInterval * page_size, (endFreeInterval - beginFreeInterval + 1)
-			* page_size, MEM_DECOMMIT);  // освобождаем физическую память, но сохраняем виртуальную
+			* page_size, MEM_DECOMMIT);  // Г®Г±ГўГ®ГЎГ®Г¦Г¤Г ГҐГ¬ ГґГЁГ§ГЁГ·ГҐГ±ГЄГіГѕ ГЇГ Г¬ГїГІГј, Г­Г® Г±Г®ГµГ°Г Г­ГїГҐГ¬ ГўГЁГ°ГІГіГ Г«ГјГ­ГіГѕ
 	}
 }
 
@@ -127,25 +127,25 @@ void CHeapManager::Destroy() {
 	free_large_blocks = free_medium_blocks = std::set<std::pair<void*, int>>();
 }
 
-void* CHeapManager::allocate_memory(void* mem, int memSize, int size) {  // отщипываем кусок памяти из свободного блока
+void* CHeapManager::allocate_memory(void* mem, int memSize, int size) {  // Г®ГІГ№ГЁГЇГ»ГўГ ГҐГ¬ ГЄГіГ±Г®ГЄ ГЇГ Г¬ГїГІГЁ ГЁГ§ Г±ГўГ®ГЎГ®Г¤Г­Г®ГЈГ® ГЎГ«Г®ГЄГ 
 	int beginPage, endPage;
 	interval_pages(mem, size, beginPage, endPage);
 	if (endPage >= pages.size()) {
-		pages.resize(endPage + 1, 0);  // 0 будет только у новых страниц
+		pages.resize(endPage + 1, 0);  // 0 ГЎГіГ¤ГҐГІ ГІГ®Г«ГјГЄГ® Гі Г­Г®ГўГ»Гµ Г±ГІГ°Г Г­ГЁГ¶
 	}
-	void* memCommited = VirtualAlloc(mem, size + sizeof(int), MEM_COMMIT, PAGE_READWRITE);  // в начало каждого блока записываем размер
+	void* memCommited = VirtualAlloc(mem, size + sizeof(int), MEM_COMMIT, PAGE_READWRITE);  // Гў Г­Г Г·Г Г«Г® ГЄГ Г¦Г¤Г®ГЈГ® ГЎГ«Г®ГЄГ  Г§Г ГЇГЁГ±Г»ГўГ ГҐГ¬ Г°Г Г§Г¬ГҐГ°
 	if (memCommited != NULL) {
 		memcpy(mem, &size, sizeof(int));
 		for (int page = beginPage; page <= endPage; page++) {
 			pages[page] += 1;
 		}
 		if (size + sizeof(int) < memSize) {
-			// после того как мы отщипили кусочек памяти, 
-			// оставшуюся память снова делаем свободной
+			// ГЇГ®Г±Г«ГҐ ГІГ®ГЈГ® ГЄГ ГЄ Г¬Г» Г®ГІГ№ГЁГЇГЁГ«ГЁ ГЄГіГ±Г®Г·ГҐГЄ ГЇГ Г¬ГїГІГЁ, 
+			// Г®Г±ГІГ ГўГёГіГѕГ±Гї ГЇГ Г¬ГїГІГј Г±Г­Г®ГўГ  Г¤ГҐГ«Г ГҐГ¬ Г±ГўГ®ГЎГ®Г¤Г­Г®Г©
 			add_free_block(static_cast<byte*>(mem) + sizeof(int) + size, memSize - size - sizeof(int));
 		}
 		blocks.insert(mem);
-		return static_cast<byte*>(mem) + sizeof(int);  // возвращаем указатель на данные
+		return static_cast<byte*>(mem) + sizeof(int);  // ГўГ®Г§ГўГ°Г Г№Г ГҐГ¬ ГіГЄГ Г§Г ГІГҐГ«Гј Г­Г  Г¤Г Г­Г­Г»ГҐ
 	}
 	else {
 		std::cerr << "Error: cannot allocate memory!" << std::endl;
@@ -153,10 +153,10 @@ void* CHeapManager::allocate_memory(void* mem, int memSize, int size) {  // отщи
 	}
 }
 
-// Ищем свободный блок в множестве freeBlocks
+// Г€Г№ГҐГ¬ Г±ГўГ®ГЎГ®Г¤Г­Г»Г© ГЎГ«Г®ГЄ Гў Г¬Г­Г®Г¦ГҐГ±ГІГўГҐ freeBlocks
 template <typename setType> std::pair<void*, int> CHeapManager::find_free_block(std::set<setType>& freeBlocks, int size) {
 	for (auto it = freeBlocks.begin(); it != freeBlocks.end(); it++) {
-		if (get_block_size(*it) >= size + sizeof(int)) {  // т.к в памяти помимо данных храним и размер
+		if (get_block_size(*it) >= size + sizeof(int)) {  // ГІ.ГЄ Гў ГЇГ Г¬ГїГІГЁ ГЇГ®Г¬ГЁГ¬Г® Г¤Г Г­Г­Г»Гµ ГµГ°Г Г­ГЁГ¬ ГЁ Г°Г Г§Г¬ГҐГ°
 			void* block = get_block(*it);
 			int size = get_block_size(*it);
 			freeBlocks.erase(it);
@@ -184,7 +184,7 @@ void* CHeapManager::get_block(std::pair<void*, int> pair) {
 	return pair.first;
 }
 
-void CHeapManager::add_empty_block_with_merge(void* block, int block_size) { // добавляем свободный блок и при возможности объединяем с соседним
+void CHeapManager::add_empty_block_with_merge(void* block, int block_size) { // Г¤Г®ГЎГ ГўГ«ГїГҐГ¬ Г±ГўГ®ГЎГ®Г¤Г­Г»Г© ГЎГ«Г®ГЄ ГЁ ГЇГ°ГЁ ГўГ®Г§Г¬Г®Г¦Г­Г®Г±ГІГЁ Г®ГЎГєГҐГ¤ГЁГ­ГїГҐГ¬ Г± Г±Г®Г±ГҐГ¤Г­ГЁГ¬
 	void* leftBorder;
 	int size = block_size;
 	std::pair<void*, int> max_block;
@@ -206,9 +206,9 @@ void CHeapManager::add_empty_block_with_merge(void* block, int block_size) { // 
 
 template <typename setType>
 std::pair<void*, int> CHeapManager::try_left_merge(std::set<setType>& targetSet, setType compareElement) {
-	// возвращаем блок с которым можно слиться
+	// ГўГ®Г§ГўГ°Г Г№Г ГҐГ¬ ГЎГ«Г®ГЄ Г± ГЄГ®ГІГ®Г°Г»Г¬ Г¬Г®Г¦Г­Г® Г±Г«ГЁГІГјГ±Гї
 	std::set<setType>::iterator found = targetSet.upper_bound(compareElement); // found > compareElement
-	if ((targetSet.size() == 0) || found == targetSet.begin() || compareElement < *(--found)) { //теперь found < compareElement
+	if ((targetSet.size() == 0) || found == targetSet.begin() || compareElement < *(--found)) { //ГІГҐГЇГҐГ°Гј found < compareElement
 		return std::make_pair(static_cast<void*>(0), 0);
 	}
 	int leftSize = get_block_size(*found);
@@ -224,7 +224,7 @@ std::pair<void*, int> CHeapManager::try_left_merge(std::set<setType>& targetSet,
 
 template <typename setType>
 std::pair<void*, int> CHeapManager::try_right_merge(std::set<setType>& targetSet, setType compareElement, int currentSize) {
-	// возвращаем блок с которым можно слиться
+	// ГўГ®Г§ГўГ°Г Г№Г ГҐГ¬ ГЎГ«Г®ГЄ Г± ГЄГ®ГІГ®Г°Г»Г¬ Г¬Г®Г¦Г­Г® Г±Г«ГЁГІГјГ±Гї
 	std::set<setType>::iterator found = targetSet.upper_bound(compareElement); // found > compareElement
 	if (found == targetSet.end()) {
 		return std::make_pair(static_cast<void*>(0), 0);
@@ -240,15 +240,15 @@ std::pair<void*, int> CHeapManager::try_right_merge(std::set<setType>& targetSet
 	}
 }
 
-// возвращает единственный возможный вариант слияния
+// ГўГ®Г§ГўГ°Г Г№Г ГҐГІ ГҐГ¤ГЁГ­Г±ГІГўГҐГ­Г­Г»Г© ГўГ®Г§Г¬Г®Г¦Г­Г»Г© ГўГ Г°ГЁГ Г­ГІ Г±Г«ГЁГїГ­ГЁГї
 std::pair<void*, int> CHeapManager::get_merge_result(std::pair<void*, int> first, std::pair<void*, int> second, std::pair<void*, int> third) {
 	if (first.first != 0) {
-		if (second.first != 0 || third.first != 0) { // при правильной работе программы этот результат невозможен
+		if (second.first != 0 || third.first != 0) { // ГЇГ°ГЁ ГЇГ°Г ГўГЁГ«ГјГ­Г®Г© Г°Г ГЎГ®ГІГҐ ГЇГ°Г®ГЈГ°Г Г¬Г¬Г» ГЅГІГ®ГІ Г°ГҐГ§ГіГ«ГјГІГ ГІ Г­ГҐГўГ®Г§Г¬Г®Г¦ГҐГ­
 			exit(10); //ASSERT
 		}
 		return first;
 	} else if (second.first != 0) {
-		if (third.first != 0) { // при правильной работе программы этот результат невозможен
+		if (third.first != 0) { // ГЇГ°ГЁ ГЇГ°Г ГўГЁГ«ГјГ­Г®Г© Г°Г ГЎГ®ГІГҐ ГЇГ°Г®ГЈГ°Г Г¬Г¬Г» ГЅГІГ®ГІ Г°ГҐГ§ГіГ«ГјГІГ ГІ Г­ГҐГўГ®Г§Г¬Г®Г¦ГҐГ­
 			exit(10);
 		}
 		return second;
